@@ -1,159 +1,135 @@
+import java.util.ArrayList;
 import java.util.Random;
 import java.util.Scanner;
 
-
 public class BlackJack {
+    // Using ArrayList for deck management
+    private static ArrayList<Card> deck = new ArrayList<>();
+    private static Random random = new Random(); // Random object for shuffling
 
-  private static Card[] cards = new Card[52];
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        boolean turn = true;
 
-  private static int currentCardIndex = 0;
-  private static int suitIndex = 0;
+        while (turn) {
+            initializeDeck(); // Create and shuffle the deck
+            shuffleDeck();
 
-  public static void main(String[] args) {
-    Scanner scanner = new Scanner(System.in);
-    boolean turn = true;
-    String playerDecision = "" ;
-    //added a for loop so the game can be played multiple times
-    //for (int i = 0; i < turn; i++) {
-    while(turn) {
-      initializeDeck();
-      //shuffleDeck();
-      int playerTotal = 0;
-      int dealerTotal = 0;
-      playerTotal = dealInitialPlayerCards();
+            int playerTotal = dealInitialPlayerCards();
+            int dealerTotal = dealInitialDealerCards();
 
-      //fix dealInitialDealerCards
-      dealerTotal = dealInitialDealerCards();
+            // Player's turn
+            playerTotal = playerTurn(scanner, playerTotal);
+            if (playerTotal > 21) {
+                System.out.println("You busted! Dealer wins.");
+            } else {
+                // Dealer's turn
+                dealerTotal = dealerTurn(dealerTotal);
+                // Determine winner
+                determineWinner(playerTotal, dealerTotal);
+            }
 
-      //fix playerTurn
-      playerTotal = playerTurn(scanner, playerTotal);
-      if (playerTotal > 21) {
-        System.out.println("You busted! Dealer wins.");
-        return;
-      }
-
-      //fix dealerTurn
-      dealerTotal = dealerTurn(dealerTotal);
-   
-      determineWinner(playerTotal, dealerTotal);
-      //added
-      //asks player if they want to play again
-      System.out.println("Would you like to play another hand?");
-     
-      playerDecision = scanner.nextLine().toLowerCase();
-      
-      while(!(playerDecision.equals("no") || (playerDecision.equals("yes")) )){
-        System.out.println("Invalid action. Please type 'hit' or 'stand'.");
-        playerDecision = scanner.nextLine().toLowerCase();
-      }
-      if (playerDecision.equals("no"))
-          turn = false;
-    }
-    System.out.println("Thanks for playing!");
-  }
-
-  // algorithm to create deck
-  private static void initializeDeck() {
-    //for (int i = 0; i < DECK.length; i++) {
-    String[] SUITS = { "Hearts", "Diamonds", "Clubs","Spades" };
-    String[] RANKS = { "2", "3", "4", "5", "6", "7", "8", "9","10", "Jack", "Queen", "King","Ace" };
-    int suitsIndex = 0, rankIndex = 0;
-    for (int i = 0; i < cards.length; i++) {
-      //DECK[i] = i;
-      //public Card(int value, String suit, String rank) {
-      int val = 10;
-      if(rankIndex < 9)
-        val = Integer.parseInt(RANKS[rankIndex]);
-      
-      cards[i] = new Card( val, SUITS[suitIndex], RANKS[rankIndex]);
-      suitIndex++;
-      if (suitIndex == 4) {
-        suitIndex = 0;
-        rankIndex++;
-      }
-    }
-  }
-  // algorithm to shuffle deck
-  private static void shuffleDeck() {
-    Random random = new Random();
-    for (int i = 0; i < cards.length; i++) {
-      int index = random.nextInt(cards.length);
-      Card temp = cards[i];
-      cards[i] = cards[index];
-      cards[index] = temp;
-    }
-  }
-  // algorithm to deal initial player cards
-  private static int dealInitialPlayerCards() {
-    /*int card1 = dealCard();
-    int card2 = dealCard();*/
-    Card card1 = dealCard();
-    Card card2 = dealCard();
-    
-    //System.out.println("Your cards: " + RANKS[card1] + " of " + SUITS[card1 / 13] + " and " + RANKS[card2] + " of " + SUITS[card2 / 13]);
-    System.out.println("Your cards: " + card1.getRank() + " of " + card1.getSuit() + " and " + card2.getRank() + " of " + card2.getSuit());
-        
-        
-    //return cardValue(card1) + cardValue(card2);
-    return card1.getValue() + card2.getValue();
-  }
-  // alogrithm to deal initial dealer cards
-  private static int dealInitialDealerCards() {
-    Card card1 = dealCard();
-    System.out.println("Dealer's card: " + card1);
-    return card1.getValue();
-  }
-  private static int playerTurn(Scanner scanner, int playerTotal) {
-    while (true) {
-      System.out.println("Your total is " + playerTotal + ". Do you want to hit or stand?");
-      String action = scanner.nextLine().toLowerCase();
-      if (action.equals("hit")) {
-        Card newCard = dealCard();
-        playerTotal += newCard.getValue();
-        System.out.println("You drew a " + newCard );
-        if (playerTotal > 21) {
-          //added
-          //resets playerTotal so the game can be played multiple times
-          System.out.println("you busted Dealer wins!" );
-          playerTotal = 0;
-          return playerTotal;
+            // Ask player if they want to play again
+            System.out.println("Would you like to play another hand? (yes or no)");
+            String playerDecision = scanner.nextLine().toLowerCase();
+            if (playerDecision.equals("no")) {
+                turn = false;
+            }
         }
-      } else if (action.equals("stand")) {
-        break;
-      } else {
-        System.out.println("Invalid action. Please type 'hit' or 'stand'.");
-      }
+        System.out.println("Thanks for playing!");
     }
-    return playerTotal;
-  }
-  // algorithm for dealer's turn
-  private static int dealerTurn(int dealerTotal) {
-    while (dealerTotal < 17) {
-      Card newCard = dealCard();
-      dealerTotal += newCard.getValue();
+
+    // Initialize the deck using an ArrayList
+    private static void initializeDeck() {
+        deck.clear(); // Clear the deck if there are cards from previous games
+        String[] suits = {"Hearts", "Diamonds", "Clubs", "Spades"};
+        String[] ranks = {"2", "3", "4", "5", "6", "7", "8", "9", "10", "Jack", "Queen", "King", "Ace"};
+
+        // Create a full deck of cards
+        for (String suit : suits) {
+            for (int i = 0; i < ranks.length; i++) {
+                int value = (i < 9) ? i + 2 : 10; // Set value: 2-10 for number cards, 10 for face cards
+                deck.add(new Card(value, suit, ranks[i]));
+            }
+        }
     }
-    System.out.println("Dealer's total is " + dealerTotal);
-    return dealerTotal;
-  }
-  // algorithm to determine the winner
-  private static void determineWinner(int playerTotal, int dealerTotal) {
-    if (dealerTotal > 21 || playerTotal > dealerTotal) {
-      System.out.println("You win!");
-    } else if (dealerTotal == playerTotal) {
-      System.out.println("It's a tie!");
-    } else {
-      System.out.println("Dealer wins!");
-      playerTotal = 0;
+
+    // Shuffle the deck
+    private static void shuffleDeck() {
+        for (int i = 0; i < deck.size(); i++) {
+            int randomIndex = random.nextInt(deck.size());
+            Card temp = deck.get(i);
+            deck.set(i, deck.get(randomIndex));
+            deck.set(randomIndex, temp);
+        }
     }
-  }
-  // algroithm to deal a card
-  //private static int dealCard() {
-  private static Card dealCard() {
-    //return DECK[currentCardIndex++] % 13;
-    return cards[currentCardIndex++];
-  }
-  // algorithm to determine card value
-  private static int cardValue(int card) {
-    return card < 9 ? card + 2 : 10;
-  }
+
+    // Deal a card from the deck
+    private static Card dealCard() {
+        if (deck.isEmpty()) { // Check if the deck is empty
+            System.out.println("Deck is empty, reshuffling...");
+            initializeDeck();
+            shuffleDeck();
+        }
+        return deck.remove(0); // Remove and return the top card
+    }
+
+    // Deal initial player cards and return their total value
+    private static int dealInitialPlayerCards() {
+        Card card1 = dealCard();
+        Card card2 = dealCard();
+        System.out.println("Your cards: " + card1 + " and " + card2);
+        return card1.getValue() + card2.getValue();
+    }
+
+    // Deal initial dealer card and return its value
+    private static int dealInitialDealerCards() {
+        Card card1 = dealCard();
+        System.out.println("Dealer's card: " + card1);
+        return card1.getValue();
+    }
+
+    // Player's turn logic
+    private static int playerTurn(Scanner scanner, int playerTotal) {
+        while (true) {
+            System.out.println("Your total is " + playerTotal + ". Do you want to hit or stand?");
+            String action = scanner.nextLine().toLowerCase();
+
+            if (action.equals("hit")) {
+                Card newCard = dealCard();
+                playerTotal += newCard.getValue();
+                System.out.println("You drew a " + newCard);
+                if (playerTotal > 21) {
+                    break; // Player busts, exit loop
+                }
+            } else if (action.equals("stand")) {
+                break; // Player stands, exit loop
+            } else {
+                System.out.println("Invalid action. Please type 'hit' or 'stand'.");
+            }
+        }
+        return playerTotal;
+    }
+
+    // Dealer's turn logic. 
+    private static int dealerTurn(int dealerTotal) {
+        while (dealerTotal < 17) { //If is less than 17, hits
+            Card newCard = dealCard();
+            dealerTotal += newCard.getValue();
+            System.out.println("Dealer draws " + newCard);
+        }
+        System.out.println("Dealer's total is " + dealerTotal);
+        return dealerTotal;
+    }
+
+    // Determine the winner of the game
+    private static void determineWinner(int playerTotal, int dealerTotal) {
+        if (dealerTotal > 21 || playerTotal > dealerTotal) {
+            System.out.println("You win!");
+        } else if (dealerTotal == playerTotal) {
+            System.out.println("It's a tie!");
+        } else {
+            System.out.println("Dealer wins!");
+        }
+    }
 }
